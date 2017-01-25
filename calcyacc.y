@@ -17,26 +17,51 @@ int yylex();
 int sym[26];	/*symbol table for storing variable names*/
 static int lbl;
 %}
-
+/*The union type of YYSTYPE which is the actual type of yylval*/
 %union {
 	int iValue;
 	char sIndex;
 	nodeType *nPtr;
 };
-
+/*Binding Integer to ivalue. Required for yacc to generate correct code*/
 %token <iValue> INTEGER
 %token <sIndex> VARIABLE
 %token WHILE IF PRINT
 %nonassoc IFX
 %nonassoc ELSE
 
+/*Left associativity is specified in a rather simple manner avoiding making changes in the grammar*/
 %left GE LE EQ NE '>' '<'
 %left '+' '-'
 %left '*' '/'
+/*Specifies that unary minus has no associativity*/
 %nonassoc UMINUS
+/*Required for some reason not yet known*/
 %type <nPtr> stmt expr stmt_list
 %%
+/** Yacc works using two stacks:
+	* Parse Stack
+	* Value Stack
+*The tokens are pushed on the parse stack and the values associated with the tokens are pushed on the value stack.
+*At any point the parse and value stacks are always synchronized in that we can always find the corresponding value of a token in the value stack.
+*The usage of the parse stack is as follows:
+	* The input token sent by the lexer is initially pushed on the stack and a shift operation is performed to move to next character in input stream.
+	* Further operations that would occur can only be either a shift or a reduce operation.
+	* A shift operation moves the input pointer to next character.
+	* A reduce operation matches the values on the parse stack with a non terminal production on rhs of production.
+	* If matched it pops the tokens ffrom the parse stack and pushes the non terminal on the lhs of the matching production.
+	* If yacc is unsure whether a shift or a reduce operation should occur it is called a shift reduce conflict.
+	* The default behaviour of yacc in a shift reduce conflict is to perform a shift operation.
+	* The decision to peform a shift or reduce decides the precedence and associativity of operators
+*/
 
+/*RULES SECTION OF A YACC FILE:
+* In this section below the syntax of the language is defined using BNF grammar.
+* It is specified in terms of productions and each production
+* The symbols $$,$1,$2 acutally have some meaning:
+	* $$ represents the value at the top of the value stack. This usually has the value after a reduce operation has a been performed.
+	* $1 represents the first non terminal on the RHS of a production and $2 is likewise.
+*/
 program: 
 	   function {exit(0);}
 	   ;
@@ -180,8 +205,7 @@ int ex(nodeType *p) {
 						printf("L%03d:\n", lbl1);
 						ex(p->opr.op[2]);
 						printf("L%03d:\n", lbl2);																																} else {
-																																													/* if */
-																																													printf("\tjz\tL%03d\n", lbl1 = lbl++);
+																																																																																			printf("\tjz\tL%03d\n", lbl1 = lbl++);
 																																												    ex(p->opr.op[1]);
 																																													printf("L%03d:\n", lbl1);
 																																									            }
